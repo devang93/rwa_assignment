@@ -53,20 +53,19 @@ from pyspark.sql.functions import max
 
 month_year_window = Window.partitionBy("block_year", "block_month")
 
-final_df = total_transfer_value_df.withColumn("max_transfer_value", max(col("total_transfer_value")).over(month_year_window))\
-                                  .withColumn("max_number_of_transfers", max(col("count")).over(month_year_window))
-
 # most transferred token by transfer value 
-most_transferred_tokens_by_value = final_df.filter(col("total_transfer_value") == col("max_transfer_value"))\
+most_transferred_tokens_by_value = total_transfer_value_df.withColumn("max_transfer_value", max(col("total_transfer_value")).over(month_year_window))\
+                                  .filter(col("total_transfer_value") == col("max_transfer_value"))\
                                   .drop("max_transfer_value")
 
 most_transferred_tokens_by_value.write.format('csv').save("/dbfs/user/rwa/metrics/by_transfer_value")
 
 # most transferred token by number of transfers
-most_transferred_tokens_by_count = final_df.filter(col("count") == col("max_number_of_transfers"))\
-                                           .drop("max_number_of_transfers")
+most_transferred_tokens_by_count = total_transfer_value_df.withColumn("max_transfer_by_count", max(col("count")).over(month_year_window))\
+                                  .filter(col("count") == col("max_transfer_by_count"))\
+                                  .drop("max_transfer_by_count")
 
-most_transferred_tokens_by_value.write.format('csv').save("/dbfs/user/rwa/metrics/by_transfer_count")
+most_transferred_tokens_by_count.write.format('csv').save("/dbfs/user/rwa/metrics/by_transfer_count")
 
 # COMMAND ----------
 
